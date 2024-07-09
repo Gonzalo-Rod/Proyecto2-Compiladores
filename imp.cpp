@@ -129,6 +129,7 @@ ImpType FCallExp::accept(TypeVisitor* v) {
 }
 
 AssignStatement::AssignStatement(string id, Exp* e):id(id), rhs(e) { }
+FCallstm::FCallstm(string id, list<Exp *> arglist):id(id), arglist(arglist) {}
 PrintStatement::PrintStatement(Exp* e):e(e) { }
 IfStatement::IfStatement(Exp* c,Body *tb, Body* fb):cond(c),tbody(tb), fbody(fb) { }
 WhileStatement::WhileStatement(Exp* c,Body *b):cond(c),body(b) { }
@@ -150,6 +151,9 @@ IfStatement::~IfStatement() { delete fbody; delete tbody; delete cond; }
 WhileStatement::~WhileStatement() { delete body; delete cond; }
 ReturnStatement::~ReturnStatement() { delete e; }
 ForDoStatement::~ForDoStatement()  {delete e1; delete e2; }
+FCallstm::~FCallstm() {
+    while (!arglist.empty()) { delete arglist.front();  ; arglist.pop_front();  }
+}
 
 StatementList::~StatementList() { }
 VarDec::~VarDec() { }
@@ -161,6 +165,10 @@ Program::~Program() { delete fun_decs; delete var_decs; }
 
 void AssignStatement::accept(ImpVisitor* v) {
   return v->visit(this);
+}
+
+void FCallstm::accept(ImpVisitor *v) {
+    return v->visit(this);
 }
 
 void PrintStatement::accept(ImpVisitor* v) {
@@ -223,6 +231,10 @@ void AssignStatement::accept(ImpValueVisitor* v) {
   return v->visit(this);
 }
 
+void FCallstm::accept(ImpValueVisitor *v) {
+    return v->visit(this);
+}
+
 void PrintStatement::accept(ImpValueVisitor* v) {
   return v->visit(this);
 }
@@ -276,6 +288,10 @@ void Program::accept(ImpValueVisitor* v) {
 
 void AssignStatement::accept(TypeVisitor* v) {
   return v->visit(this);
+}
+
+void FCallstm::accept(TypeVisitor *v) {
+    return v->visit(this);
 }
 
 void PrintStatement::accept(TypeVisitor* v) {
