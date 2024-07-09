@@ -1,0 +1,10 @@
+var int z;
+
+fun void main()
+  for z in (5,8) do
+    print(z)
+  endfor;
+  return()
+endfun
+
+
