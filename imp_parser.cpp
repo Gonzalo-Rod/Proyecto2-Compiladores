@@ -354,10 +354,10 @@ Stm* Parser::parseStatement() {
       if (!match(Token::ENDFOR)) parserError("Esperaba 'endfor'");
       s = new ForDoStatement(id, e1, e2, tb);
   } else if (match(Token::RETURN)) {
-    if (!match(Token::LPAREN)) parserError("Esperaba 'lparen'");
+    if (!match(Token::LPAREN)) parserError("Esperaba ')'");
     if (!check(Token::RPAREN)) 
       e = parseCExp();
-    if (!match(Token::RPAREN)) parserError("Esperaba 'rparen'");
+    if (!match(Token::RPAREN)) parserError("Esperaba '('");
     s = new ReturnStatement(e);
     
   }
