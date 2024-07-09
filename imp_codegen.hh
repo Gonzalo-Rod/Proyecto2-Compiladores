@@ -31,6 +31,7 @@ public:
   void visit(FunDec*);  
   void visit(StatementList*);
   void visit(AssignStatement*);
+  void visit(FCallstm*);
   void visit(PrintStatement*);
   void visit(IfStatement*);
   void visit(WhileStatement*);
