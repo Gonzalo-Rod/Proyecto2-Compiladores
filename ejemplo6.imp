@@ -1,10 +1,10 @@
-var int z;
+var int x, y;
 
 fun void main()
-  for z in (5,8) do
-    print(z)
-  endfor;
+  x = 100; y = 10;
+    for x in (y, y+2) do
+      print(x)
+    endfor;
+  print(x);
   return()
 endfun
-
-
