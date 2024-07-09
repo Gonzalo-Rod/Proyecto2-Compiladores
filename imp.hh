@@ -179,6 +179,16 @@ public:
   ~ReturnStatement();
 };
 
+class FCallstm : public Stm {
+public:
+    string id;
+    list<Exp*> arglist;
+    FCallstm(string id, list<Exp*> arglist);
+    void accept(ImpVisitor* v);
+    void accept(ImpValueVisitor* v);
+    void accept(TypeVisitor* v);
+    ~FCallstm();
+};
 
 class StatementList {
 public:
