@@ -7,7 +7,7 @@ ImpCodeGen::ImpCodeGen(ImpTypeChecker* a):analysis(a) {
 void ImpCodeGen::codegen(string label, string instr) {
   if (label !=  nolabel)
     code << label << ": ";
-  code << instr << endl;  
+  code << instr << endl;
 }
 
 void ImpCodeGen::codegen(string label, string instr, int arg) {
@@ -56,8 +56,8 @@ void ImpCodeGen::visit(Program* p) {
   p->var_decs->accept(this);
   process_global = false;
 
-  mem_globals = current_dir; 
-  
+  mem_globals = current_dir;
+
   // codegen
   codegen("start","skip");
   codegen(nolabel,"enter",mem_globals);
@@ -69,18 +69,18 @@ void ImpCodeGen::visit(Program* p) {
 
   p->fun_decs->accept(this);
   direcciones.remove_level();
-  return;  
+  return;
 }
 
 void ImpCodeGen::visit(Body * b) {
 
   // guardar direccion inicial current_dir
-  
+
   direcciones.add_level();
-  
+
   b->var_decs->accept(this);
   b->slist->accept(this);
-  
+
   direcciones.remove_level();
 
   // restaurar dir
@@ -91,7 +91,7 @@ void ImpCodeGen::visit(VarDecList* s) {
   list<VarDec*>::iterator it;
   for (it = s->vdlist.begin(); it != s->vdlist.end(); ++it) {
     (*it)->accept(this);
-  }  
+  }
   return;
 }
 
@@ -163,7 +163,7 @@ void ImpCodeGen::visit(PrintStatement* s) {
 void ImpCodeGen::visit(IfStatement* s) {
   string l1 = next_label();
   string l2 = next_label();
-  
+
   s->cond->accept(this);
   codegen(nolabel,"jmpz",l1);
   s->tbody->accept(this);
@@ -173,7 +173,7 @@ void ImpCodeGen::visit(IfStatement* s) {
     s->fbody->accept(this);
   }
   codegen(l2,"skip");
- 
+
   return;
 }
 
@@ -191,14 +191,22 @@ void ImpCodeGen::visit(WhileStatement* s) {
   return;
 }
 
+void ImpCodeGen::visit(ForDoStatement *s) {
+
+}
+
+void ImpCodeGen::visit(FCallstm *s){
+
+}
+
 void ImpCodeGen::visit(ReturnStatement* s) {
   // agregar codigo
-  
+
   codegen(nolabel,"return", 100);  // modifcar 100
   return;
 }
 
-void ImpCodeGen::visit(ForDoStatement *s) {}
+
 
 int ImpCodeGen::visit(BinaryExp* e) {
   e->left->accept(this);
@@ -225,7 +233,7 @@ int ImpCodeGen::visit(NumberExp* e) {
 
 int ImpCodeGen::visit(TrueFalseExp* e) {
   codegen(nolabel,"push",e->value?1:0);
- 
+
   return 0;
 }
 
@@ -246,7 +254,7 @@ int ImpCodeGen::visit(ParenthExp* ep) {
 int ImpCodeGen::visit(CondExp* e) {
   string l1 = next_label();
   string l2 = next_label();
- 
+
   e->cond->accept(this);
   codegen(nolabel, "jmpz", l1);
   e->etrue->accept(this);
