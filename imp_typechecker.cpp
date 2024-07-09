@@ -253,6 +253,43 @@ void ImpTypeChecker::visit(ForDoStatement* s) {
     env.remove_level();
 }
 
+void ImpTypeChecker::visit(FCallstm* s){
+    if (!env.check(s->id)) {
+        cout << "(Function call): " << s->id <<  " no existe" << endl;
+        exit(0);
+    }
+    ImpType funtype = env.lookup(s->id);
+    if (funtype.ttype != ImpType::FUN) {
+        cout << "(Function call): " << s->id <<  " no es una funcion" << endl;
+        exit(0);
+    }
+
+    // check args
+    int num_fun_args = funtype.types.size()-1;
+    int num_fcall_args = s->arglist.size();
+    ImpType rtype;
+    rtype.set_basic_type(funtype.types[num_fun_args]);
+
+    // que hacer con sp y el valor de retorno?
+
+    if (num_fun_args != num_fcall_args) {
+        cout << "(Function call) Numero de argumentos no corresponde a declaracion de: " << s->id << endl;
+        exit(0);
+    }
+    ImpType argtype;
+    list<Exp*>::iterator it;
+    int i = 0;
+    for (it = s->arglist.begin(); it != s->arglist.end(); ++it) {
+        argtype = (*it)->accept(this);
+        if (argtype.ttype != funtype.types[i]) {
+            cout << "(Function call) Tipo de argumento no corresponde a tipo de parametro en fcall de: " << s->id << endl;
+            exit(0);
+        }
+        i++;
+    }
+    return;
+}
+
 ImpType ImpTypeChecker::visit(BinaryExp* e) {
   ImpType t1 = e->left->accept(this);
   ImpType t2 = e->right->accept(this);
