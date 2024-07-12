@@ -75,7 +75,7 @@ void ImpCodeGen::visit(Program* p) {
 void ImpCodeGen::visit(Body * b) {
 
   // guardar direccion inicial current_dir
-
+  int dirinit = current_dir;
   direcciones.add_level();
 
   b->var_decs->accept(this);
@@ -84,6 +84,7 @@ void ImpCodeGen::visit(Body * b) {
   direcciones.remove_level();
 
   // restaurar dir
+  current_dir = dirinit;
   return;
 }
 
@@ -123,15 +124,28 @@ void ImpCodeGen::visit(FunDec* fd) {
   VarEntry ventry;
 
   // agregar direcciones de argumentos
+  auto it = fd->vars.begin();
+  for (int i = 0; i < m; ++i, ++it){
+      current_dir++;
+      ventry.dir = -current_dir;
+      ventry.is_global = false;
+      direcciones.add_var(*it, ventry);
+  }
 
   // agregar direccion de return
+    current_dir++;
+    ventry.dir = -current_dir;
+    ventry.is_global = false;
+    direcciones.add_var("return", ventry);
 
   // generar codigo para fundec
+    codegen(get_flabel(fd->fname), "skip");
+    codegen(nolabel, "enter", fentry.max_stack);
+    codegen(nolabel, "alloc", fentry.mem_locals);
 
-  num_params = m;
+    num_params = m;
 
-  //fd->body->accept(this);
-  // -- sacar comentarios para generar codigo del cuerpo
+    fd->body->accept(this);
 
   return;
 }
@@ -146,12 +160,14 @@ void ImpCodeGen::visit(StatementList* s) {
 }
 
 void ImpCodeGen::visit(AssignStatement* s) {
-  s->rhs->accept(this);
-  VarEntry ventry = direcciones.lookup(s->id);
-  // generar codigo store/storer
-  codegen(nolabel,"store", 100); // modificar 100 global vs local
+    s->rhs->accept(this);
+    VarEntry ventry = direcciones.lookup(s->id);
+    if (ventry.is_global)
+        codegen(nolabel, "store", ventry.dir);
+    else
+        codegen(nolabel, "storer", ventry.dir);
 
-  return;
+    return;
 }
 
 void ImpCodeGen::visit(PrintStatement* s) {
@@ -192,18 +208,64 @@ void ImpCodeGen::visit(WhileStatement* s) {
 }
 
 void ImpCodeGen::visit(ForDoStatement *s) {
+    VarEntry ventry = direcciones.lookup(s->id);
 
+    string l1 = next_label();
+    string l2 = next_label();
+    string l3 = next_label();
+
+    s->e1->accept(this);
+    codegen(nolabel, "store", ventry.dir);
+    codegen(l1, "skip");
+    s->e2->accept(this);
+    if (ventry.is_global)
+        codegen(nolabel, "load", ventry.dir);
+    else
+        codegen(nolabel, "loadr", ventry.dir);
+    codegen(nolabel, "lt");
+    codegen(nolabel, "jmpz", l2);
+    s->body->accept(this);
+    codegen(nolabel, "load", ventry.dir);
+    codegen(nolabel, "push", 1);
+    codegen(nolabel, "add");
+    if (ventry.is_global)
+        codegen(nolabel, "store", ventry.dir);
+    else
+        codegen(nolabel, "storer", ventry.dir);
+    codegen(nolabel, "goto", l1);
+    codegen(l2, "skip");
+
+    return;
 }
 
 void ImpCodeGen::visit(FCallstm *s){
+    FEntry fentry = analysis->ftable.lookup(s->id);
+    ImpType ftype = fentry.ftype;
 
+    for (auto it = s->arglist.rbegin(); it != s->arglist.rend(); ++it) {
+        (*it)->accept(this);
+    }
+
+    codegen(nolabel,"mark");
+    codegen(nolabel,"pusha",get_flabel(s->id));
+    codegen(nolabel,"call");
+
+    return;
 }
 
 void ImpCodeGen::visit(ReturnStatement* s) {
-  // agregar codigo
 
-  codegen(nolabel,"return", 100);  // modifcar 100
-  return;
+    VarEntry ventry = direcciones.lookup("return");
+    if (s->e != NULL){
+        s->e->accept(this);
+        if (ventry.is_global)
+            codegen(nolabel, "store", ventry.dir);
+        else
+            codegen(nolabel, "storer", ventry.dir);
+    }
+
+    codegen(nolabel,"return", num_params);
+    return;
 }
 
 
@@ -266,12 +328,18 @@ int ImpCodeGen::visit(CondExp* e) {
 }
 
 int ImpCodeGen::visit(FCallExp* e) {
+    FEntry fentry = analysis->ftable.lookup(e->fname);
+    ImpType ftype = fentry.ftype;
 
-  FEntry fentry = analysis->ftable.lookup(e->fname);
-  ImpType ftype = fentry.ftype;
+    codegen(nolabel,"alloc", 1);
 
-  // agregar codigo
+    for (auto it = e->args.rbegin(); it != e->args.rend(); ++it) {
+        (*it)->accept(this);
+    }
 
-  codegen(nolabel,"call");
-  return 0;
+    codegen(nolabel,"mark");
+    codegen(nolabel,"pusha",get_flabel(e->fname));
+    codegen(nolabel,"call");
+
+    return 0;
 }
